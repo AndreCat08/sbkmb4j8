@@ -1,8 +1,9 @@
-// Wiring: DOM events → store → storage → render.
+﻿// Wiring: DOM events -> store -> storage -> render.
 
 import { LIMITS, createCandle, validateCandle } from './model.js';
-import { addCandle, findCandle, removeCandle, updateCandleInList } from './store.js';
-import { sortByNewest, summarize } from './summary.js';
+import {
+  addCandle, findCandle, removeCandle, sortByNewest, summarize, updateCandleInList,
+} from './store.js';
 import { STORAGE_KEY, isStorageAvailable, loadCandles, saveCandles } from './storage.js';
 import { announce, renderBanner, renderCards, renderRating, renderSummary } from './render.js';
 
@@ -26,12 +27,12 @@ function view() {
 }
 
 // Reports a failed save rather than losing the entry. In-memory state is never
-// rolled back — the user keeps what they just typed.
+// rolled back: the user keeps what they just typed.
 function persist() {
   const { ok, reason } = saveCandles(adapter, candles);
   if (!ok) {
     renderBanner(ui.banners, reason === 'quota'
-      ? 'Storage is full — your changes are here for now but were not saved. Delete a few candles to free space.'
+      ? 'Storage is full. Your changes are here for now but were not saved.'
       : 'Your changes could not be saved to this browser, but the app still works for this visit.');
   }
 }
@@ -127,7 +128,7 @@ function start() {
   } else {
     const raw = adapter.getItem(STORAGE_KEY);
     candles = loadCandles(adapter);
-    // Something was stored but nothing survived parsing — say so rather than
+    // Something was stored but nothing survived parsing: say so rather than
     // showing an empty collection as though it had always been empty.
     if (raw && candles.length === 0) {
       renderBanner(ui.banners, 'Your saved collection could not be read, so the log is starting empty.');

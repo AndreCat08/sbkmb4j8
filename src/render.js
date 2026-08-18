@@ -49,8 +49,7 @@ export function renderCards(list, candles, template) {
 }
 
 export function renderRating(container, value) {
-  const flames = [];
-  for (let i = 1; i <= 5; i += 1) {
+  const flames = [1, 2, 3, 4, 5].map((i) => {
     const flame = el('button', FLAME);
     flame.type = 'button';
     flame.className = i <= value ? 'flame on' : 'flame';
@@ -59,8 +58,8 @@ export function renderRating(container, value) {
     flame.setAttribute('aria-checked', String(i === value));
     flame.setAttribute('aria-label', `${i} flame${i > 1 ? 's' : ''}`);
     flame.tabIndex = i === value || (value === 0 && i === 1) ? 0 : -1;
-    flames.push(flame);
-  }
+    return flame;
+  });
   container.replaceChildren(...flames);
 }
 

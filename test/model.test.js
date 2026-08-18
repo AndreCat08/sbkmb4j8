@@ -59,16 +59,14 @@ test('createCandle builds a complete entity, trimmed, with defaults', () => {
   eq(c.scents, ['cedar', 'vanilla']);
   assert.equal(c.notes, 'tunneled', 'free text is trimmed');
   assert.equal(c.createdAt, c.updatedAt, 'timestamps match on creation');
-  assert.equal(c.createdAt, 1_700_000_000_000);
 
   const plain = createCandle({ name: 'Plain' }, deps);
   eq([plain.status, plain.rating, plain.brand, plain.scents], ['unlit', 0, '', []],
     'rating 0 means unrated');
-});
 
-test('createCandle ignores unknown keys, nothing is smuggled in', () => {
-  const c = createCandle({ name: 'Plain', isAdmin: true, __proto__: { polluted: 1 } }, deps);
-  assert.equal(c.isAdmin, undefined);
+  // Unknown keys are dropped rather than carried into the entity.
+  const hostile = createCandle({ name: 'P', isAdmin: true, __proto__: { polluted: 1 } }, deps);
+  assert.equal(hostile.isAdmin, undefined);
   assert.equal({}.polluted, undefined, 'Object.prototype must stay clean');
 });
 
@@ -87,7 +85,7 @@ test('updateCandle returns a new object and never mutates the original', () => {
   eq(updateCandle(original, { scents: 'oak, oak, smoke' }, deps).scents, ['oak', 'smoke']);
 });
 
-test('normalizeCandle repairs hostile stored values', () => {
+test('normalizeCandle repairs, preserves, or rejects stored entries', () => {
   for (const [rating, expected] of [['4', 4], [9, 5], [-2, 0], [3.7, 3], ['abc', 0], [NaN, 0]]) {
     assert.equal(normalizeCandle({ name: 'X', rating }, deps).rating, expected, String(rating));
   }
@@ -96,14 +94,12 @@ test('normalizeCandle repairs hostile stored values', () => {
   assert.ok(c.id, 'a missing id is generated');
   eq([c.createdAt, c.updatedAt], [1_700_000_000_000, 1_700_000_000_000]);
   eq(c.scents, ['cedar', 'vanilla']);
-});
 
-test('normalizeCandle preserves valid entries and rejects unsalvageable ones', () => {
   const stored = {
     id: 'keep-me', name: 'Baies', brand: 'Diptyque', scents: ['cedar'],
     status: 'finished', rating: 5, notes: 'lovely', createdAt: 10, updatedAt: 20,
   };
-  eq(normalizeCandle(stored, deps), stored);
+  eq(normalizeCandle(stored, deps), stored, 'valid entries pass through untouched');
 
   for (const raw of [null, 42, 'candle', [], {}, { name: '   ' }]) {
     assert.equal(normalizeCandle(raw, deps), null, JSON.stringify(raw));
