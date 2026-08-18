@@ -1,0 +1,11 @@
+{
+  "name": "candle-collection-log",
+  "version": "1.0.0",
+  "description": "A cozy single-page log for cataloguing your candle collection.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"test/**/*.test.js\"",
+    "serve": "npx --yes serve ."
+  }
+}
