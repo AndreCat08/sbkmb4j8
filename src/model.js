@@ -7,8 +7,8 @@ export const STATUSES = ['unlit', 'burning', 'finished'];
 // Slugs are what we store; labels are only ever for display.
 export const STATUS_LABELS = { unlit: 'Unlit', burning: 'Burning', finished: 'Finished' };
 
-// Enforced here rather than only via HTML maxlength (trivially bypassed).
-// Also the primary defence against filling the localStorage quota.
+// Enforced here, not only via HTML maxlength (bypassable). Also the primary
+// defence against filling the localStorage quota.
 export const LIMITS = {
   MAX_NAME: 80, MAX_BRAND: 80, MAX_NOTES: 500,
   MAX_SCENTS: 12, MAX_SCENT: 40, MAX_RATING: 5,
@@ -48,20 +48,18 @@ export function validateCandle(input = {}) {
   const brand = text(input.brand);
   const notes = text(input.notes);
 
+  const tooLong = (n) => `Keep this under ${n} characters.`;
   if (!name) errors.name = 'Give your candle a name.';
-  else if (name.length > LIMITS.MAX_NAME) errors.name = `Keep the name under ${LIMITS.MAX_NAME} characters.`;
-
-  if (brand.length > LIMITS.MAX_BRAND) errors.brand = `Keep the brand under ${LIMITS.MAX_BRAND} characters.`;
-  if (notes.length > LIMITS.MAX_NOTES) errors.notes = `Keep notes under ${LIMITS.MAX_NOTES} characters.`;
+  else if (name.length > LIMITS.MAX_NAME) errors.name = tooLong(LIMITS.MAX_NAME);
+  if (brand.length > LIMITS.MAX_BRAND) errors.brand = tooLong(LIMITS.MAX_BRAND);
+  if (notes.length > LIMITS.MAX_NOTES) errors.notes = tooLong(LIMITS.MAX_NOTES);
 
   if (input.status !== undefined && !STATUSES.includes(input.status)) {
     errors.status = 'Pick Unlit, Burning, or Finished.';
   }
-  if (input.rating !== undefined) {
-    const r = input.rating;
-    if (!(Number.isInteger(r) && r >= 0 && r <= LIMITS.MAX_RATING)) {
-      errors.rating = `Rate from 1 to ${LIMITS.MAX_RATING} flames, or leave it unrated.`;
-    }
+  const r = input.rating;
+  if (r !== undefined && !(Number.isInteger(r) && r >= 0 && r <= LIMITS.MAX_RATING)) {
+    errors.rating = `Rate 1 to ${LIMITS.MAX_RATING} flames, or leave it unrated.`;
   }
   return { valid: Object.keys(errors).length === 0, errors };
 }

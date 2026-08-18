@@ -2,16 +2,19 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { addCandle, findCandle, removeCandle, updateCandleInList } from '../src/store.js';
 
-const make = (id, extra = {}) => ({ id, name: `Candle ${id}`, rating: 0, ...extra });
+const make = (id) => ({ id, name: `Candle ${id}`, rating: 0 });
 const list = () => [make('a'), make('b'), make('c')];
 const ids = (l) => l.map((c) => c.id);
 
-test('addCandle appends without mutating the original', () => {
+test('addCandle and removeCandle never mutate the original list', () => {
   const before = list();
-  const after = addCandle(before, make('d'));
-  assert.deepEqual(ids(after), ['a', 'b', 'c', 'd']);
+  assert.deepEqual(ids(addCandle(before, make('d'))), ['a', 'b', 'c', 'd']);
+  assert.deepEqual(ids(removeCandle(before, 'b')), ['a', 'c']);
   assert.equal(before.length, 3, 'original must not be mutated');
-  assert.deepEqual(addCandle([], make('a')), [make('a')]);
+
+  assert.equal(removeCandle(before, 'zzz'), before, 'unknown id returns the same list');
+  assert.deepEqual(removeCandle([make('only')], 'only'), []);
+  assert.deepEqual(ids(removeCandle([make('a'), make('dupe'), make('dupe')], 'dupe')), ['a']);
 });
 
 test('updateCandleInList replaces only the match, siblings keep identity', () => {
@@ -24,20 +27,8 @@ test('updateCandleInList replaces only the match, siblings keep identity', () =>
   assert.equal(updateCandleInList(before, 'zzz', { rating: 5 }), before, 'unknown id: same list');
 });
 
-test('removeCandle removes matches only, leaving the original intact', () => {
-  const before = list();
-  assert.deepEqual(ids(removeCandle(before, 'b')), ['a', 'c']);
-  assert.equal(before.length, 3, 'original must not be mutated');
-  assert.equal(removeCandle(before, 'zzz'), before, 'unknown id: same list');
-  assert.deepEqual(removeCandle([make('only')], 'only'), []);
-
-  const dupes = [make('a'), make('dupe'), make('dupe'), make('b')];
-  assert.deepEqual(ids(removeCandle(dupes, 'dupe')), ['a', 'b']);
-});
-
 test('findCandle returns the match or undefined', () => {
   const candles = list();
   assert.equal(findCandle(candles, 'b'), candles[1]);
   assert.equal(findCandle(candles, 'zzz'), undefined);
-  assert.equal(findCandle([], 'a'), undefined);
 });

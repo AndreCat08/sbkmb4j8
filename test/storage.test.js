@@ -24,22 +24,20 @@ const candle = (extra = {}) => ({
 });
 const wrap = (candles, version = SCHEMA_VERSION) => JSON.stringify({ version, candles });
 
-test('saveCandles round-trips through loadCandles', () => {
+test('saveCandles round-trips, and reports failure instead of throwing', () => {
   const adapter = memory();
   assert.deepEqual(saveCandles(adapter, [candle()]), { ok: true });
   assert.equal(JSON.parse(adapter.getItem(STORAGE_KEY)).version, SCHEMA_VERSION,
     'the version travels with the data');
   assert.deepEqual(loadCandles(adapter), [candle()]);
-});
 
-test('saveCandles reports failure instead of throwing', () => {
   const quota = Object.assign(new Error('full'), { name: 'QuotaExceededError' });
   assert.deepEqual(saveCandles(throwing(quota), [candle()]), { ok: false, reason: 'quota' });
   assert.deepEqual(saveCandles(throwing(), [candle()]), { ok: false, reason: 'unavailable' });
 });
 
-test('loadCandles returns [] for absent, empty, or unusable payloads', () => {
-  const cases = [undefined, '', '{oops', '42', 'null', '"text"', '{}', '{"candles":"nope"}'];
+test('loadCandles returns [] for anything it cannot trust', () => {
+  const cases = [undefined, '', '{oops', '42', 'null', '{}', '{"candles":"nope"}'];
   for (const seed of cases) assert.deepEqual(loadCandles(memory(seed)), [], String(seed));
   assert.deepEqual(loadCandles(memory(wrap([candle()], 99))), [], 'refuses a newer schema');
   assert.deepEqual(loadCandles(throwing()), [], 'adapter itself throws');

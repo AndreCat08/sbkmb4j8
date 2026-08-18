@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; base-uri 'none'; form-action 'none'; object-src 'none'">
+<title>Candle Collection Log</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><text y='14' font-size='14'>🕯️</text></svg>">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="wrap">
+    <h1><span class="flame-mark" aria-hidden="true"></span> Candle Collection Log</h1>
+
+    <dl class="summary" id="summary">
+      <div class="stat"><dt>Logged</dt><dd data-stat="total">0</dd></div>
+      <div class="stat" data-status="burning"><dt>Burning</dt><dd data-stat="burning">0</dd></div>
+      <div class="stat" data-status="finished"><dt>Finished</dt><dd data-stat="finished">0</dd></div>
+      <div class="stat"><dt>Avg rating</dt><dd data-stat="averageRating">0</dd></div>
+    </dl>
+
+    <button class="btn primary" id="add">Add candle</button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="banners" role="status"></div>
+  <p class="sr-only" id="live" aria-live="polite"></p>
+  <ul class="grid" id="collection" aria-label="Your candles"></ul>
+  <div class="empty" id="empty" hidden>
+    <p class="empty-mark" aria-hidden="true">🕯️</p>
+    <h2>No candles logged yet</h2>
+    <p>Start your collection — jot down the scent, how it burned, and what you thought.</p>
+    <button class="btn primary" data-act="add">Log your first candle</button>
+  </div>
+</main>
+
+<dialog id="editor">
+  <form method="dialog" id="form" novalidate>
+    <h2 id="form-title">Add a candle</h2>
+
+    <div class="field">
+      <label for="name">Name <span class="req" aria-hidden="true">*</span></label>
+      <input id="name" name="name" maxlength="80" required autocomplete="off">
+      <p class="err" id="err-name"></p>
+    </div>
+
+    <div class="field">
+      <label for="brand">Brand</label>
+      <input id="brand" name="brand" maxlength="80" autocomplete="off">
+      <p class="err" id="err-brand"></p>
+    </div>
+
+    <div class="field span">
+      <label for="scents">Scent notes</label>
+      <input id="scents" name="scents" placeholder="cedarwood, vanilla, sea salt" autocomplete="off">
+      <p class="hint">Separate with commas.</p>
+    </div>
+
+    <div class="field">
+      <label for="status">Status</label>
+      <select id="status" name="status">
+        <option value="unlit">Unlit</option>
+        <option value="burning">Burning</option>
+        <option value="finished">Finished</option>
+      </select>
+    </div>
+
+    <fieldset class="field rating-field">
+      <legend>Rating</legend>
+      <div class="rating" id="rating" role="radiogroup" aria-label="Rating out of 5 flames"></div>
+    </fieldset>
+
+    <div class="field span">
+      <label for="notes">Personal notes</label>
+      <textarea id="notes" name="notes" rows="3" maxlength="500"
+        placeholder="Tunneled badly · perfect for evenings · gifted to mom"></textarea>
+      <p class="err" id="err-notes"></p>
+    </div>
+
+    <footer class="actions">
+      <button class="btn" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" id="save" value="save">Save candle</button>
+    </footer>
+  </form>
+</dialog>
+
+<template id="card">
+  <li class="card">
+    <div class="card-head">
+      <div>
+        <h3 data-slot="name"></h3>
+        <p class="brand" data-slot="brand"></p>
+      </div>
+      <span class="pill" data-slot="status"></span>
+    </div>
+    <p class="rating-view" data-slot="rating"></p>
+    <ul class="chips" data-slot="scents"></ul>
+    <p class="notes" data-slot="notes"></p>
+    <div class="card-actions">
+      <button class="btn small" data-act="edit">Edit</button>
+      <button class="btn small danger" data-act="delete">Delete</button>
+    </div>
+    <div class="confirm" data-slot="confirm" hidden>
+      <p>Delete this candle?</p>
+      <button class="btn small danger" data-act="confirm-delete">Delete</button>
+      <button class="btn small" data-act="cancel-delete">Keep</button>
+    </div>
+  </li>
+</template>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

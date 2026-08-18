@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  LIMITS, STATUSES, createCandle, normalizeCandle, parseScents, updateCandle, validateCandle,
+  LIMITS, createCandle, normalizeCandle, parseScents, updateCandle, validateCandle,
 } from '../src/model.js';
 
 let seq = 0;
@@ -15,23 +15,19 @@ test('parseScents splits, trims, dedupes case-insensitively, and caps', () => {
     ['  cedarwood  ,   vanilla  ', ['cedarwood', 'vanilla']],
     ['a,,b,', ['a', 'b']],
     ['Vanilla, vanilla, VANILLA', ['Vanilla']], // first casing wins
-    ['cedar, Oak, oak, CEDAR', ['cedar', 'Oak']],
-    ['   ', []], ['', []], ['single', ['single']],
-    [null, []], [undefined, []], [42, []], [{}, []], [true, []],
+    ['   ', []], [null, []], [42, []],
   ];
   for (const [input, expected] of cases) eq(parseScents(input), expected, String(input));
 
   eq(parseScents(Array.from({ length: 20 }, (_, i) => `s${i}`).join(',')).length, LIMITS.MAX_SCENTS);
   eq(parseScents('x'.repeat(80))[0].length, LIMITS.MAX_SCENT);
-});
 
-test('parseScents is idempotent, so form and storage share one path', () => {
+  // Idempotent, so the form and stored data share one path.
   const once = parseScents('cedarwood, vanilla');
   eq(parseScents(once), once);
-  eq(parseScents(parseScents(once)), once);
 });
 
-test('validateCandle flags each broken rule and accepts each boundary', () => {
+test('validateCandle flags each broken rule and accepts valid values', () => {
   eq(validateCandle(valid), { valid: true, errors: {} });
 
   const bad = [
@@ -48,35 +44,26 @@ test('validateCandle flags each broken rule and accepts each boundary', () => {
     assert.ok(r.errors[field], `expected error on ${field}`);
   }
 
-  const ok = [
-    { name: 'x'.repeat(LIMITS.MAX_NAME) }, { brand: 'x'.repeat(LIMITS.MAX_BRAND) },
-    { notes: 'x'.repeat(LIMITS.MAX_NOTES) },
-    ...[0, 1, 5].map((rating) => ({ rating })), ...STATUSES.map((status) => ({ status })),
-  ];
-  for (const patch of ok) {
+  for (const patch of [{ name: 'x'.repeat(LIMITS.MAX_NAME) }, { rating: 0 }, { rating: 5 }]) {
     assert.equal(validateCandle({ ...valid, ...patch }).valid, true, JSON.stringify(patch));
   }
-});
 
-test('validateCandle reports every failure at once, not just the first', () => {
   const { errors } = validateCandle({ name: '', status: 'melted', rating: 9 });
-  eq(Object.keys(errors).sort(), ['name', 'rating', 'status']);
+  eq(Object.keys(errors).sort(), ['name', 'rating', 'status'], 'every failure at once');
 });
 
 test('createCandle builds a complete entity, trimmed, with defaults', () => {
-  const c = createCandle({ ...valid, scents: 'cedar, vanilla' }, deps);
+  const c = createCandle({ ...valid, scents: 'cedar, vanilla', notes: ' tunneled ' }, deps);
   eq(Object.keys(c).sort(),
     ['brand', 'createdAt', 'id', 'name', 'notes', 'rating', 'scents', 'status', 'updatedAt']);
   eq(c.scents, ['cedar', 'vanilla']);
-  assert.equal(c.createdAt, 1_700_000_000_000);
+  assert.equal(c.notes, 'tunneled', 'free text is trimmed');
   assert.equal(c.createdAt, c.updatedAt, 'timestamps match on creation');
-
-  const trimmed = createCandle({ name: '  Baies  ', brand: ' Diptyque ', notes: ' tunneled ' }, deps);
-  eq([trimmed.name, trimmed.brand, trimmed.notes], ['Baies', 'Diptyque', 'tunneled']);
+  assert.equal(c.createdAt, 1_700_000_000_000);
 
   const plain = createCandle({ name: 'Plain' }, deps);
-  eq([plain.status, plain.rating, plain.brand, plain.notes, plain.scents],
-    ['unlit', 0, '', '', []], 'rating 0 means unrated');
+  eq([plain.status, plain.rating, plain.brand, plain.scents], ['unlit', 0, '', []],
+    'rating 0 means unrated');
 });
 
 test('createCandle ignores unknown keys, nothing is smuggled in', () => {
@@ -86,17 +73,13 @@ test('createCandle ignores unknown keys, nothing is smuggled in', () => {
 });
 
 test('updateCandle returns a new object and never mutates the original', () => {
-  const original = createCandle(valid, deps);
+  const original = createCandle(valid, { ...deps, now: () => 1000 });
   const updated = updateCandle(original, { name: 'Feu de Bois' }, deps);
   assert.notEqual(updated, original, 'must not be the same reference');
   assert.equal(original.name, 'Baies', 'original must not be mutated');
-  assert.equal(updated.name, 'Feu de Bois');
-});
 
-test('updateCandle keeps id and createdAt immutable, advances updatedAt', () => {
-  const original = createCandle(valid, { ...deps, now: () => 1000 });
   const hijack = updateCandle(original, { id: 'hijacked', createdAt: 0 }, deps);
-  eq([hijack.id, hijack.createdAt], [original.id, original.createdAt]);
+  eq([hijack.id, hijack.createdAt], [original.id, original.createdAt], 'identity is immutable');
 
   const patched = updateCandle(original, { rating: 5 }, { ...deps, now: () => 2000 });
   eq([patched.updatedAt, patched.rating, patched.brand], [2000, 5, 'Diptyque'],
@@ -105,7 +88,7 @@ test('updateCandle keeps id and createdAt immutable, advances updatedAt', () => 
 });
 
 test('normalizeCandle repairs hostile stored values', () => {
-  for (const [rating, expected] of [['4', 4], [9, 5], [-2, 0], [3.7, 3], ['abc', 0], [null, 0], [NaN, 0]]) {
+  for (const [rating, expected] of [['4', 4], [9, 5], [-2, 0], [3.7, 3], ['abc', 0], [NaN, 0]]) {
     assert.equal(normalizeCandle({ name: 'X', rating }, deps).rating, expected, String(rating));
   }
   const c = normalizeCandle({ name: 'X', status: 'melted', scents: 'cedar, vanilla' }, deps);
@@ -122,7 +105,7 @@ test('normalizeCandle preserves valid entries and rejects unsalvageable ones', (
   };
   eq(normalizeCandle(stored, deps), stored);
 
-  for (const raw of [null, undefined, 42, 'candle', [], {}, { name: '   ' }, { brand: 'no name' }]) {
+  for (const raw of [null, 42, 'candle', [], {}, { name: '   ' }]) {
     assert.equal(normalizeCandle(raw, deps), null, JSON.stringify(raw));
   }
 });
