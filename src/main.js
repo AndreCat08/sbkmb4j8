@@ -135,19 +135,16 @@ function start() {
   }
 
   ui.form.addEventListener('submit', submit);
-  ui.list.addEventListener('click', onGridClick);
-  ui.rating.addEventListener('click', (e) => {
-    const flame = e.target.closest('.flame');
-    if (flame) setRating(Number(flame.dataset.value));
-  });
   ui.rating.addEventListener('keydown', onRatingKey);
-  ui.banners.addEventListener('click', (e) => {
-    if (e.target.classList.contains('banner')) renderBanner(ui.banners, '');
+
+  // One delegated click listener for the whole page.
+  document.addEventListener('click', (e) => {
+    const flame = e.target.closest('.flame');
+    if (flame) return setRating(Number(flame.dataset.value));
+    if (e.target.classList.contains('banner')) return renderBanner(ui.banners, '');
+    if (e.target.closest('[data-act="add"]')) return openEditor(null);
+    if (e.target.closest('.card')) onGridClick(e);
   });
-  ui.empty.addEventListener('click', (e) => {
-    if (e.target.closest('[data-act="add"]')) openEditor(null);
-  });
-  $('add').addEventListener('click', () => openEditor(null));
 
   view();
 }

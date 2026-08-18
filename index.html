@@ -20,7 +20,7 @@
       <div class="stat"><dt>Avg rating</dt><dd data-stat="averageRating">0</dd></div>
     </dl>
 
-    <button class="btn primary" id="add">Add candle</button>
+    <button class="btn primary" data-act="add">Add candle</button>
   </div>
 </header>
 
@@ -67,7 +67,7 @@
       </select>
     </div>
 
-    <fieldset class="field rating-field">
+    <fieldset class="field">
       <legend>Rating</legend>
       <div class="rating" id="rating" role="radiogroup" aria-label="Rating out of 5 flames"></div>
     </fieldset>
@@ -75,13 +75,13 @@
     <div class="field span">
       <label for="notes">Personal notes</label>
       <textarea id="notes" name="notes" rows="3" maxlength="500"
-        placeholder="Tunneled badly · perfect for evenings · gifted to mom"></textarea>
+        placeholder="Tunneled badly · gifted to mom"></textarea>
       <p class="err" id="err-notes"></p>
     </div>
 
     <footer class="actions">
       <button class="btn" value="cancel" formnovalidate>Cancel</button>
-      <button class="btn primary" id="save" value="save">Save candle</button>
+      <button class="btn primary" value="save">Save candle</button>
     </footer>
   </form>
 </dialog>

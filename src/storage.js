@@ -6,8 +6,8 @@ import { normalizeCandle } from './model.js';
 export const STORAGE_KEY = 'candle-log/v1';
 export const SCHEMA_VERSION = 1;
 
-// Never throws. Returns a result object so the UI can tell the user their entry
-// is held in memory but unsaved, instead of losing it silently.
+// Never throws. Returns a result so the UI can say an entry is held in memory
+// but unsaved, instead of losing it silently.
 export function saveCandles(adapter, list) {
   try {
     adapter.setItem(STORAGE_KEY, JSON.stringify({ version: SCHEMA_VERSION, candles: list }));
